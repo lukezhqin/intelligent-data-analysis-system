@@ -1,8 +1,9 @@
 %% ========================================
 % Copyright @XXX 2017-2019 All Rights Reserved.#
-% Author   : Anakin.Qin  2017.12.26 11:16:24   #
-% Website  : https://anakinqin.github.io       #
+% Author   : Luke.Qin  2017.12.26 11:16:24     #
+% Website  : https://lukezhqin.github.io       #
 % E-mail   : zonghang.qin@foxmail.com          #
+% Updated  : 2019.07.30                        #
 % Intelligent Data Analysis System(IDAS)
 % use "mcc -e IDAS" cmd to generate the exe-file
 function IDAS
@@ -129,6 +130,16 @@ handles.varlist=uicontrol(handles.IDAS,'Style','listbox',...
     'Position',[0.55 0.13 0.4 0.77],...
     'ButtonDownFcn',@varlist_ButtonDownFcn,...
     'KeyPressFcn',@varlist_KeyPressFcn);
+%add marker var
+handles.marker=uicontrol(handles.IDAS,'Style','text',...
+    'Tag','mrklist',...
+    'HorizontalAlignment','left',...
+    'BackgroundColor','white',...
+    'FontSize',10,...
+    'Min',0,...
+    'Max',2,...             %  If Max - Min > 1, then list boxes allow multiple item selection
+    'Value',[],...
+    'Units','normalized');
 handles.varorder=uicontrol(handles.IDAS,'Style','listbox',...
     'Tag','varorder',...
     'HorizontalAlignment','left',...
@@ -190,7 +201,7 @@ handles.newDocument=uicontrol(handles.IDAS,'Style','checkbox',...
 
 
 % --------------------Check configuration files--------------------
-cfgname='Configuration_AnakinQin.cfg';
+cfgname='Configuration_LukeQin.cfg';
 cfgfpath=strcat(pwd,'\',cfgname);
 fid=fopen(cfgfpath);
 if fid >= 0
@@ -282,11 +293,11 @@ if fid~=-1
     end
     % read sorted list
     orderdata=fscanf(fid,'%f');
-    if max(orderdata)>length(varlist)
+    if max(orderdata)>length(varlist(:,1))
         orderdata=[];
     end
     if ~isempty(orderdata)
-        orderstr=varlist(orderdata);
+        orderstr=varlist(orderdata,1);%is this right? should we use {}?
         set(handles.varlist,'Position',[0.55 0.13 0.205 0.77])
         set(handles.varorder,'String',orderstr,'Userdata',orderdata,'Visible','on')
         set(handles.text_SelectedVarNo,'String',['Selected :' int2str(length(orderdata))])
@@ -307,7 +318,7 @@ if fid~=-1
     skipline=fgetl(fid);
     fullPathName_Export=fgetl(fid);
     %     set(handles.editbox_headerfile,'String',headerfile);
-    set(handles.varlist,'String',varlist);
+    set(handles.varlist,'String',varlist(:,1));
     set(handles.text_TotalVarNo,'String',['Total :',int2str(nvar)]);
     [pathstr, name, ext]=fileparts(filelist{end});
     Userdata.Value=[];
@@ -347,7 +358,7 @@ dim=length(File);
 % add for setting defaut directory
 Userdata=get(hobject,'Userdata');
 %support for the APM open source flight control system data analysis
-cfgname='Configuration_AnakinQin.cfg';
+cfgname='Configuration_LukeQin.cfg';
 cfgfpath=strcat(pwd,'\',cfgname);
 fid=fopen(cfgfpath);
 if fid >= 0
@@ -464,7 +475,20 @@ else
     end
 end
 
-set(handles.varlist,'String',varlist);
+set(handles.varlist,'String',varlist(:,1));
+set(handles.mrklist,'String',varlist(:,1));%%%fucking here,should here be modify?
+temp=varlist(:,2);
+lentemp=length(temp);
+temp0=zeros(lentemp,1);
+for i=1:lentemp
+    temp0(i)=temp{i};
+end
+set(handles.mrklist,'Value',temp0);
+temp=[];
+temp0=[];
+lentemp=[];
+%how should I add a porperty of Marker directly in varlist?
+%set(handles.varlist,'Marker',varlist(:,2));
 % set(handles.varlist,'Value',[]);           % should we clear selection now£¿£¿£¿
 text_disp=['Total :   ' num2str(nvar)];
 set(handles.text_TotalVarNo,'String',text_disp);
@@ -472,7 +496,7 @@ set(handles.text_axis,'String','X-Axis : Time','UserData',0);
 % update orderstr
 orderdata = get(handles.varorder,'Userdata');
 if ~isempty(orderdata)
-    orderstr=varlist(orderdata);
+    orderstr=varlist(orderdata,1);
     set(handles.varorder,'String',orderstr);
 end
 

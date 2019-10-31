@@ -1,3 +1,12 @@
+%% ========================================
+% Copyright @XXX 2017-2019 All Rights Reserved.#
+% Author   : Luke.Qin  2017.12.26 11:16:24     #
+% Website  : https://lukezhqin.github.io       #
+% E-mail   : zonghang.qin@foxmail.com          #
+% Updated  : 2019.07.30                        #
+% Intelligent Data Analysis System(IDAS)
+% use "mcc -e IDAS" cmd to generate the exe-file
+
 IDAS Executable
 
 1. Prerequisites for Deployment 

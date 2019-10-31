@@ -4,10 +4,11 @@ function PlotFig(hobject,eventdata,varargin)
 
 global layout nvar_selected n_windows                % 供DispFigure.m使用
 global idasdata File x_label index_selected i_windows    % 保存数据，供绘制下一图
-global fileinfo
+global fileinfo mcachedname use_mcached
 
 handles=GetHandles;
 varlist = get(handles.varlist,'String');
+mrklist = get(handles.mrklist,'Value');%add marker porperty
 index_selected = get(handles.varlist,'Value');
 File = GetFiletoPlot(handles);
 nvar=length(varlist);
@@ -26,6 +27,31 @@ elseif nvar_selected==0         % 如果不选择变量，默认全部选中
     index_selected = 1:nvar;
 end
 
+%读取配置文件，该文件写明了需要转换的变量，忽略不存在的变量
+cfgname='Configuration_LukeQin.cfg';
+cfgfpath=strcat(pwd,'\',cfgname);
+fid=fopen(cfgfpath);
+if fid==-1
+    fprintf('Cannot find "%s" file in path:<"%s">!!\n\n\n',cfgfpath,cfgname);
+    errordlg('Cannot find ".cfg" file in root path');
+    return;
+end
+flag=1;
+while flag
+    skip=fgetl(fid);
+    tokens=textscan(skip,'%s','Delimiter','_');
+    tokens=tokens{1};
+    flag=~strcmp(tokens{1},'@@@');
+end
+for i=1:8
+    fgetl(fid);
+end
+mcachedname=fgetl(fid);
+mcachedname=textscan(mcachedname,'%s','Delimiter','_');
+mcachedname=mcachedname{1};
+mcachedname=mcachedname{2};
+use_mcached=fscanf(fid,'%d',1);
+%use_mcached:0---none,1---use mcachedfile
 
 %% import data
 % dotname=File{1}(length(File{1})-4+1:end);
@@ -33,14 +59,17 @@ end
 for i=1:length(File)
     newfileinfo{i} = dir(File{i});
 end
+
 if ~isequal(fileinfo,newfileinfo)   % 判断文件是否更改，是则重新读取
+    % 搜索缓存文件夹是否有相同文件名的mat格式文件，
+    % 写出mat格式前提是第一次读取
     %     for i=1:length(File)
     %         idasdata{i}.Data=[]; % 释放被idasdata.Data占用的空间，防止内存溢出
     %     end
     idasdata=[];% 释放被idasdata占用的空间，直接砍掉所有内存，防止内存溢出
     try
         if (strcmpi(dotname,'.mat')||strcmpi(dotname,'.log'))%mat格式文件的读取按照load方式处理%log格式文件也走这条路
-            idasdata=readdata_mat_log_bin(File,varlist);
+            idasdata=readdata_mat_log_bin(File,varlist,mrklist,use_mcached,mcachedname);
         else
             idasdata=readdata(File,varlist);
         end
@@ -64,7 +93,7 @@ if userdata~=0
 else
     if isfield(idasdata{1},'label')
         %读取配置文件，该文件写明了需要转换的变量，忽略不存在的变量
-        cfgname='Configuration_AnakinQin.cfg';
+        cfgname='Configuration_LukeQin.cfg';
         cfgfpath=strcat(pwd,'\',cfgname);
         fid=fopen(cfgfpath);
         if fid==-1
@@ -79,7 +108,7 @@ else
             tokens=tokens{1};
             flag=~strcmp(tokens{1},'@@@');
         end
-        for i=1:8
+        for i=1:10
             fgetl(fid);
         end
         %时间单位选择

@@ -53,8 +53,8 @@ function atomquery_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to atomquery (see VARARGIN)
 
 % Choose default command line output for atomquery
-%added by Anakin.Qin, we do not find where to officially input 20181017
-hObject.Name = 'Standard atmosphere query - Powered By Anakin.Qin';
+%added by Luke.Qin, we do not find where to officially input 20181017
+hObject.Name = 'Standard atmosphere query - Powered By Luke.Qin';
 handles.output = hObject;
 movegui('center')
 pos=get(gcf,'Position');

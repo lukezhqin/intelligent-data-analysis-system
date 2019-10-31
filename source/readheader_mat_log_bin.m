@@ -1,7 +1,7 @@
 function [nvar,varlist]=readheader_mat_log_bin(File)
 % Copyright @XXX 2017-2019 All Rights Reserved.#
-% Author   : Anakin.Qin  2017.12.26 11:16:24   #
-% Website  : https://anakinqin.github.io       #
+% Author   : Luke.Qin  2017.12.26 11:16:24     #
+% Website  : https://lukezhqin.github.io       #
 % E-mail   : zonghang.qin@foxmail.com          #
 % Intelligent Data Analysis System(IDAS)
 rootpath=pwd;
@@ -31,7 +31,7 @@ end
 if (strcmpi(ext,'.log'))
     %暂时还未整理好bin文件读取:a=fread(fid)直接读取二进制文件，但是需要知道数据协议，等待2.0版本进行发布bin文件直接读取功能--->89一行数据
     %读取配置文件，该文件写明了需要转换的变量，忽略不存在的变量
-    cfgname='Configuration_AnakinQin.cfg';
+    cfgname='Configuration_LukeQin.cfg';
     cfgfpath=strcat(rootpath,'\',cfgname);
     fid=fopen(cfgfpath);
     if fid==-1
@@ -54,18 +54,18 @@ if (strcmpi(ext,'.log'))
             return;
         end
     end
-    for i=1:8
+    for i=1:10
         fgetl(fid);
     end
     %时间单位选择
     fgetl(fid);
-    tmunit=fscanf(fid,'%s',1);
+    tmunit=fscanf(fid,'%s',1);%default:sec
     fgetl(fid);
     fgetl(fid);
     fgetl(fid);
     numscan=fscanf(fid,'%f',1);
     fuck=cell(1,numscan);
-    scanset=cell(2,1);
+    scanset=cell(2,2);
     %添加“//”控制读取末尾的功能，与行数功能相融合。首先按给定行数读取，但是一旦读到停止符“//”即可停止。
     for i=1:numscan
         temp=fscanf(fid,'%s',1);
@@ -78,15 +78,30 @@ if (strcmpi(ext,'.log'))
     end
     fclose(fid);
     %去掉'_label'标签字节
+    %同时还需要探测是否有标志_MRK
     t=1;
     for i=1:numscan
         if ~isempty(fuck{i})
-            scanset{t}=fuck{i}(1:(length(fuck{i})-6));
+            temp=textscan(fuck{i},'%s','Delimiter','_');
+            temp=temp{1};
+            scanset{t,1}=temp{1};
+            if (length(temp)==3)
+                %use marker later in plot
+                if (strcmpi(temp{3},'MRK'))
+                    scanset{t,2}=1;
+                else
+                    scanset{t,2}=0;
+                end
+            else
+                scanset{t,2}=0;
+            end
             t=t+1;
         end
     end
     fuck=[];
-    scanset_len=length(scanset);
+    temp=size(scanset);
+    scanset_len=temp(1);
+    temp=[];
     
     %% 读取数据头log格式
     fid = fopen(File);
@@ -108,42 +123,39 @@ if (strcmpi(ext,'.log'))
         end
     end
     fclose(fid);
-    [valid_scanset,len_sig,ptr_sig]=findchecklabel(textscandata,scanset);
+    [valid_scanset,len_sig,ptr_sig]=findchecklabel(textscandata,scanset(:,1));
     minussss=scanset_len-valid_scanset;
-    delta=10000;
-    cnt=0;
-    isfinished=0;
-    while(~isfinished && minussss~=0 && cnt<50)%没有找完整，重新读取数据,最多重复累加50次
-        cnt=cnt+1;
+    %redo the up code if we hav minussss~=0
+    %没有找完整，重新读取数据,最多往后寻找到底一万行即可停止搜索
+    if(minussss~=0)%indicate some vars we can't find in the varlist
+        delta=10000;
         textscandata=cell(2,1);
-        i=1;
         fid = fopen(File);
-        while((~feof(fid))&&(i<(cnt*delta)))
-            textscandata{i}=fgetl(fid);
+        i=0;
+        while ((~feof(fid))&&(i<delta))
             i=i+1;
-        end
-        if(feof(fid))
-            isfinished=1;
+            textscandata{i}=fgetl(fid);
         end
         fclose(fid);
-        [valid_scanset,len_sig,ptr_sig]=findchecklabel(textscandata,scanset);
-        minussss=scanset_len-valid_scanset;
+        [valid_scanset,len_sig,ptr_sig]=findchecklabel(textscandata,scanset(:,1));
     end
+    minussss=scanset_len-valid_scanset;
     %去掉所有找不到的数据标签
     if (minussss~=0)
-        scanset_final=cell(valid_scanset,1);
+        scanset_final=cell(valid_scanset,2);
         temp1=zeros(valid_scanset,1);
         temp2=zeros(valid_scanset,1);
         k=1;
         for i=1:scanset_len
             if (len_sig(i)~=0)
-                scanset_final{k}=scanset{i};
+                scanset_final{k,1}=scanset{i,1};
+                scanset_final{k,2}=scanset{i,2};
                 temp1(k)=len_sig(i);
                 temp2(k)=ptr_sig(i);
                 k=k+1;
             else
                 %提示有那几个标签不存在，不存在的数据标签不利于数据对比分析。
-                str_war=strcat('Data label: ',scanset{i},'_label is NOT exist!');
+                str_war=strcat('Data label: ',scanset{i,1},'_label is NOT exist!');
                 warndlg(str_war,'数据标签缺失');
             end
         end
@@ -151,12 +163,13 @@ if (strcmpi(ext,'.log'))
         ptr_sig=[];
         scanset=[];
         scanset=scanset_final;
+        scanset_final=[];
         len_sig=temp1;
         ptr_sig=temp2;
     end
     %从所求指针中读取配置文件中的匹配标签数据
     nvar=0;
-    varlist=cell(2,1);
+    varlist=cell(2,2);
     temp=1;
     for i=1:valid_scanset
         nownum=len_sig(i);
@@ -165,7 +178,8 @@ if (strcmpi(ext,'.log'))
         tokens=tokens{1};
         start_cnt=length(tokens)-nownum+1;
         for j=1:nownum
-            varlist{temp}=strcat(scanset{i},'_',tokens{start_cnt});
+            varlist{temp,1}=strcat(scanset{i,1},'_',tokens{start_cnt});
+            varlist{temp,2}=scanset{i,2};
             start_cnt=start_cnt+1;
             temp=temp+1;
         end
@@ -175,7 +189,7 @@ if (strcmpi(ext,'.log'))
     clearvars -except nvar varlist
     return;
 end
-%% 读取mat格式文件
+%% 读取mat格式文件---20190728今后可能不会维护该格式文件的读取，直接读取bin文件
 whosdata = whos('-file',File);
 if strcmp(whosdata(1).name,'@')%去掉特殊标志符
     whosdata=whosdata(2:end);
@@ -187,7 +201,7 @@ end
 whosdata=[];%释放内存
 loadfile=load(File,getallname{:});
 %读取配置文件，该文件写明了需要转换的变量，忽略不存在的变量
-cfgname='Configuration_AnakinQin.cfg';
+cfgname='Configuration_LukeQin.cfg';
 cfgfpath=strcat(rootpath,'\',cfgname);
 fid=fopen(cfgfpath);
 if fid==-1
@@ -210,7 +224,7 @@ while flag
         return;
     end
 end
-for i=1:8
+for i=1:10
     fgetl(fid);
 end
 %时间单位选择
@@ -294,17 +308,20 @@ end
 
 function y=mysort_dash(x)
 %only to sort the char before the dash signal "_"
-lenx=length(x);
-y=cell(lenx,1);
+temp=size(x);
+lenx=temp(1);
+y=cell(lenx,temp(2));
 t=cell(lenx,1);
 for i=1:lenx
-    tokens=textscan(x{i},'%s','Delimiter','_');
+    tokens=textscan(x{i,1},'%s','Delimiter','_');
     tokens=tokens{1};
     t{i}=tokens{1};
 end
 [~,idx]=sort(t);
 for i=1:lenx
-    y{i}=x{idx(i)};
+    for j=1:temp(2)
+        y{i,j}=x{idx(i),j};
+    end
 end
 end
 

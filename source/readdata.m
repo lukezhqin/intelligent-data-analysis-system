@@ -43,12 +43,12 @@ try
         tokens0=textscan(str,'%s','Delimiter','+');
         tokens0=tokens0{1};
         if length(tokens0{1})>=17
-            flag=strcmp(tokens0{1}(length(tokens0{1})-17+1:end),'AnakinQin4APMdata');
+            flag=strcmp(tokens0{1}(length(tokens0{1})-17+1:end),'LukeQin4APMdata');
         else
             flag=0;
         end
         if length(tokens0)~=1 && flag
-            %flag:AnakinQin4APMdata再次确认token第一个元胞数组末尾17个字符长度是否正确
+            %flag:LukeQin4APMdata再次确认token第一个元胞数组末尾17个字符长度是否正确
             tokens1=textscan(tokens0{1},'%s','Delimiter','_');
             tokens1=tokens1{1};
             tokens2=textscan(tokens0{2},'%s','Delimiter','_');

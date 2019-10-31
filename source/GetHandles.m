@@ -21,4 +21,5 @@ handles.filelist            =   findobj(h_children,'Tag','filelist');
 handles.filelist_comp            =   findobj(h_children,'Tag','filelist_comp');% add for plot compare
 handles.extend_comp             =    findobj(h_children,'Tag','extend_comp');% add for plot compare
 handles.newDocument             =    findobj(h_children,'Tag','newDocument');% add for plot compare
+handles.mrklist             =  findobj(h_children,'Tag','mrklist');
 

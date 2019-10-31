@@ -1,7 +1,7 @@
 function [new,Print,Refresh,Layout,Axis,Copy,Zoom,First,Previous,Next,Last,Search,lineSize,Lookup,Pan,Datacursor,AIicon]=load_icondata()
 % Copyright @XXX 2017-2019 All Rights Reserved.#
-% Author   : Anakin.Qin  2017.12.26 11:16:24   #
-% Website  : https://anakinqin.github.io       #
+% Author   : Luke.Qin  2017.12.26 11:16:24     #
+% Website  : https://lukezhqin.github.io       #
 % E-mail   : zonghang.qin@foxmail.com          #
 % Intelligent Data Analysis System(IDAS)
 % 将icondata离线打包进程序文件里，方便生成exe文件

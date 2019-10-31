@@ -41,6 +41,18 @@ property{8}='-';
 property{9}='-';
 property{10}='-';
 
+marker{1}='d';
+marker{2}='d';
+marker{3}='d';
+marker{4}='d';
+marker{5}='d';
+marker{6}='d';
+marker{7}='d';
+marker{8}='d';
+marker{9}='d';
+marker{10}='d';
+markersize=4;
+
 figure(h_MainPlotFig);
 filenamestr='';
 for i=1:length(File)
@@ -64,7 +76,7 @@ text(0.5,0.2,filenamestr,'FontName','Arial Unicode MS','FontWeight','bold','Inte
 rightclickmenu=uicontextmenu;
 uimenu(rightclickmenu,'Tag','label1','label','对比曲线','callback',@CompareLine);
 uimenu(rightclickmenu,'Tag','label2','label','二进制绘图','callback',@PlotBinary);
-%增加曲线时间平移功能Anakin.Qin20180109
+%增加曲线时间平移功能Luke.Qin20180109
 uimenu(rightclickmenu,'Tag','label3','label','时钟平移','callback',@ShiftPlot);
 
 
@@ -79,17 +91,23 @@ for iFile=1:length(File)
     for ivar_selected=1:nvar_selected
         %%%%%%%%%%%%%%%%%%%
         y=var{iFile}.Data(index_plot(ivar_selected),:);
+        mrk_bit=y(2);
+        y=y(1);
+        x_mrk=[];
+        y_mrk=[];
         %%%%%%%%%%%%%%%%%%%
         %%%APM数据画图
         if isfield(var{iFile},'label')
             y=y{1};
+            mrk_bit=mrk_bit{1};
+            [rmrk_bit,cmrk_bit]=size(mrk_bit);
             ned=index_plot(ivar_selected);
             k=1;
             ff=0;
             while k<length(var{iFile}.label)
                 %den=var{iFile}.label(k)-k;
                 if ned+1<var{iFile}.label(2)
-                    % added by Anakin.Qin 20181101 all totally is to debug
+                    % added by Luke.Qin 20181101 all totally is to debug
                     % the right button functione when you click the mouse
                     % right button, and chose the variable to be the x
                     % label parameters, the structure of the idasdata.xdata
@@ -140,7 +158,27 @@ for iFile=1:length(File)
             end
             ylabel(var{iFile}.varlist{index_plot(ivar_selected)} ,'VerticalAlignment','middle','FontName','Verdana','FontSize',9,'FontWeight','bold','Interpreter','none');  % top|cap|middle|baseline|bottom
         end
+        % do plot here
         plot(haxes(ivar_selected),x,y,property{iFile},'Color',color{iFile},'LineWidth',1,'Tag','line','ButtonDownFcn',@line_buttondownfcn,'UIContextMenu',rightclickmenu);
+        %first value of y_mrk is 1, which means we have a marker porperty
+        if (cmrk_bit>1)
+            if (mrk_bit(1,1)==1)
+                x_mrk=zeros(rmrk_bit,1);
+                y_mrk=zeros(rmrk_bit,1);
+                for mrk=1:rmrk_bit
+                    x_mrk(mrk)=x(mrk_bit(mrk,2));
+                    y_mrk(mrk)=y(mrk_bit(mrk,2));
+                end
+                hold on;
+                plot(haxes(ivar_selected),x_mrk,y_mrk,marker{iFile},'Color',color{iFile},'MarkerSize',markersize);
+            else
+                %This should never happen actually
+                fclose all;
+                delete(hwaitbar);%close(hwaitbar);关闭读取的进度条，显示读取错误界面
+                errordlg(lasterr,'Marker标志位内存错误');
+                rethrow(lasterror);
+            end
+        end
     end
     clear x y
 end

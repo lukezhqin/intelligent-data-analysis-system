@@ -20,3 +20,6 @@ codegen/
 *.slxc
 # Octave session info
 octave-workspace
+# you may not want to include the following files below either
+*.txt
+*.log

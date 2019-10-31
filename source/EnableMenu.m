@@ -61,6 +61,7 @@ else
     end
 end
 
-verstr='IDAS_V1.6';
-figName=[verstr,' Powered by Anakin.Qin','           Page:',num2str(i_windows),'/',num2str(n_windows)];
+verstr='IDAS_V1.8';
+%今后完成一次性读取并保存所有“FMT,”的数据格式并按照cfg文件去选择绘图变量并且能够将所有数据按照结构体的数据结构来存放，就可以将版本号升级到2.0
+figName=[verstr,' Powered by Luke.Qin','           Page:',num2str(i_windows),'/',num2str(n_windows)];
 set(h_MainPlotFig,'name',figName);
