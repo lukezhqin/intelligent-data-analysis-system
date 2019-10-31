@@ -33,7 +33,7 @@ h1_submenu=uimenu(h_menu,...
     'Callback','winopen(''Manual.doc'')');
 h2_submenu=uimenu(h_menu,...
     'Label','IDAS Version',...
-    'Callback','msgbox(''IDAS Version 1.6 , Mar. 26,2019'');');
+    'Callback','msgbox(''IDAS Version 1.8 , Jul. 05,2019'');');
 %----------------uipanel-------------------
 handles.uipanel  =  uipanel(handles.IDAS,...
     'BackgroundColor',[0.9 0.95 0.95],...
@@ -255,13 +255,13 @@ if fid~=-1
             end
             if ~ischar(dotname)
                 if (strcmpi(dotname{i},'.mat')||strcmpi(dotname{i},'.log'))
-                    [nvar,varlist]=readheader_mat_log_bin(filelist{1});
+                    [nvar,varlist,alllist]=readheader_mat_log_bin(filelist{1});
                 else
                     [nvar,varlist]=readheader(filelist{1});
                 end
             else
                 if (strcmpi(dotname,'.mat')||strcmpi(dotname,'.log'))
-                    [nvar,varlist]=readheader_mat_log_bin(filelist{1});
+                    [nvar,varlist,alllist]=readheader_mat_log_bin(filelist{1});
                 else
                     [nvar,varlist]=readheader(filelist{1});
                 end
@@ -463,13 +463,13 @@ set(hobject,'String',File,'Value',newValue,'Userdata',Userdata);% select the las
 % read the header file£¬do viewheaderfile_Callback
 if ~ischar(dotname)
     if (strcmpi(dotname{i},'.mat')||strcmpi(dotname{i},'.log'))
-        [nvar,varlist]=readheader_mat_log_bin(File{1});
+        [nvar,varlist,alllist]=readheader_mat_log_bin(File{1});
     else
         [nvar,varlist]=readheader(File{1});
     end
 else
     if (strcmpi(dotname,'.mat')||strcmpi(dotname,'.log'))
-        [nvar,varlist]=readheader_mat_log_bin(File{1});
+        [nvar,varlist,alllist]=readheader_mat_log_bin(File{1});
     else
         [nvar,varlist]=readheader(File{1});
     end

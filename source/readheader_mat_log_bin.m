@@ -1,4 +1,4 @@
-function [nvar,varlist]=readheader_mat_log_bin(File)
+function [nvar,varlist,alllist]=readheader_mat_log_bin(File)
 % Copyright @XXX 2017-2019 All Rights Reserved.#
 % Author   : Luke.Qin  2017.12.26 11:16:24     #
 % Website  : https://lukezhqin.github.io       #
@@ -109,37 +109,27 @@ if (strcmpi(ext,'.log'))
         errordlg('Corruption in file system！');
         return;
     end
-    textscandata=cell(2,1);
-    i=1;
-    %     while(~feof(fid))
-    while(i<3000)
-        textscandata{i}=fgetl(fid);
+    %tic;
+    flinelist=cell(2,1);
+    textscandata=textscan(fid,'%s','Delimiter','\n');
+    textscandata=textscandata{1};
+    fclose(fid);
+    len_flinedata=length(textscandata);
+    t=1;
+    for i=1:len_flinedata
         tokens=textscan(textscandata{i},'%s','Delimiter',',');
         tokens=tokens{1};
-        i=i+1;
-        %采用“MSG”作为头文件标签读取的结束位置(MSG, 131114894, TIM_GNC: F1_V3.2.2)
-        if (strcmp('MSG',tokens{1}))
-            break;
+        if (strcmp('FMT',tokens{1}) && ~strcmp('FMT',tokens(4)))
+            flinelist{t}=textscandata{i};
+            t=t+1;
         end
     end
-    fclose(fid);
-    [valid_scanset,len_sig,ptr_sig]=findchecklabel(textscandata,scanset(:,1));
+    %get alllist aparted and sorted here
+    [alllist,valid_scanset,len_sig,ptr_sig]=myapartedsortcheck(flinelist,scanset(:,1));
     minussss=scanset_len-valid_scanset;
-    %redo the up code if we hav minussss~=0
-    %没有找完整，重新读取数据,最多往后寻找到底一万行即可停止搜索
-    if(minussss~=0)%indicate some vars we can't find in the varlist
-        delta=10000;
-        textscandata=cell(2,1);
-        fid = fopen(File);
-        i=0;
-        while ((~feof(fid))&&(i<delta))
-            i=i+1;
-            textscandata{i}=fgetl(fid);
-        end
-        fclose(fid);
-        [valid_scanset,len_sig,ptr_sig]=findchecklabel(textscandata,scanset(:,1));
-    end
-    minussss=scanset_len-valid_scanset;
+    %toc;
+    %
+    %
     %去掉所有找不到的数据标签
     if (minussss~=0)
         scanset_final=cell(valid_scanset,2);
@@ -174,7 +164,7 @@ if (strcmpi(ext,'.log'))
     for i=1:valid_scanset
         nownum=len_sig(i);
         nvar=nvar+nownum;
-        tokens=textscan(textscandata{ptr_sig(i)},'%s','Delimiter',',');
+        tokens=textscan(flinelist{ptr_sig(i)},'%s','Delimiter',',');
         tokens=tokens{1};
         start_cnt=length(tokens)-nownum+1;
         for j=1:nownum
@@ -186,10 +176,10 @@ if (strcmpi(ext,'.log'))
     end
     %sort the data label
     varlist = mysort_dash(varlist);
-    clearvars -except nvar varlist
+    clearvars -except nvar varlist alllist
     return;
 end
-%% 读取mat格式文件---20190728今后可能不会维护该格式文件的读取，直接读取bin文件
+%% 读取mat格式文件---20190728今后放弃维护该格式文件的读取，直接读取bin文件
 whosdata = whos('-file',File);
 if strcmp(whosdata(1).name,'@')%去掉特殊标志符
     whosdata=whosdata(2:end);
@@ -303,7 +293,71 @@ end
 %sort the data label
 varlist = mysort_dash(varlist);
 % clear temp len_sig getallname;
-clearvars -except nvar varlist
+clearvars -except nvar varlist alllist
+end
+
+function [y,valid_scanset,len_sig,ptr_sig]=myapartedsortcheck(x,rq)
+%apart the x and get it sorted
+valid_scanset=0;
+rq_len=length(rq);
+len_sig=zeros(rq_len,1);
+ptr_sig=zeros(rq_len,1);
+tlen_sig=zeros(rq_len,1);
+tptr_sig=zeros(rq_len,1);
+lenx=length(x);
+t=cell(2,1);
+ff=0;
+% for kk=1:rq_len
+%     for i=1:lenx
+%         tokens=textscan(x{i},'%s','Delimiter',',');
+%         tokens=tokens{1};
+%         %有几个参数不需要进行数据绘图
+%         if (~strcmp(tokens{4},'UNIT') && ...
+%                 ~strcmp(tokens{4},'FMTU') && ...
+%                 ~strcmp(tokens{4},'MULT') && ...
+%                 ~strcmp(tokens{4},'PARM'))
+%         end
+%     end
+% end
+%
+for i=1:lenx
+    tokens=textscan(x{i},'%s','Delimiter',',');
+    tokens=tokens{1};
+    %有几个参数不需要进行数据绘图
+    if (~strcmp(tokens{4},'UNIT') && ...
+            ~strcmp(tokens{4},'FMTU') && ...
+            ~strcmp(tokens{4},'MULT') && ...
+            ~strcmp(tokens{4},'PARM'))
+        ff=ff+1;
+        t{ff}=tokens{4};
+        for kk=1:rq_len
+            if strcmp(t{ff},rq{kk})
+                if kk==1
+                    a=1;
+                end
+                tlen_sig(kk)=length(tokens)-6;
+                tptr_sig(kk)=i;
+                valid_scanset=valid_scanset+1;
+            end
+        end
+    end
+end
+y=cell(ff,1);
+%be very careful about the following sort method and prt location
+[~,idx]=sort(t);
+for i=1:ff
+    y{i}=t{idx(i)};
+end
+len_sig=tlen_sig;
+ptr_sig=tptr_sig;
+%the following process is designed to track the y params sequence, but we
+%still need all the information in x.
+% for i=1:rq_len
+%     if (tlen_sig(i)~=0 && tptr_sig(i)~=0)
+%         len_sig(i)=idx(tlen_sig(i));
+%         ptr_sig(i)=idx(tptr_sig(i));
+%     end
+% end
 end
 
 function y=mysort_dash(x)
@@ -325,8 +379,8 @@ for i=1:lenx
 end
 end
 
-function [valid_scanset,len_sig,ptr_sig]=findchecklabel(textscandata,scanset)
-textscanlen=length(textscandata);
+function [valid_scanset,len_sig,ptr_sig]=findchecklabel(alldata,scanset)
+alldata_len=length(alldata);
 scanset_len=length(scanset);
 len_sig=zeros(scanset_len,1);
 ptr_sig=zeros(scanset_len,1);
@@ -334,8 +388,8 @@ ptr_sig=zeros(scanset_len,1);
 %fuck the first line
 valid_scanset=0;
 i=1;
-while (i<=textscanlen)
-    tokens=textscan(textscandata{i},'%s','Delimiter',',');
+while (i<=alldata_len)
+    tokens=textscan(alldata{i},'%s','Delimiter',',');
     tokens=tokens{1};
     if (strcmp('FMT',tokens{1}))
         for j=1:scanset_len
