@@ -119,6 +119,68 @@ for i=1:lenx
 end
 end
 
+function y=apminfo_str2double(x)
+% for the APM open source code, we may got string format info, so we can
+% transfer it in this function
+%     STABILIZE =     0,  // manual airframe angle with manual throttle
+%     ACRO =          1,  // manual body-frame angular rate with manual throttle
+%     ALT_HOLD =      2,  // manual airframe angle with automatic throttle
+%     AUTO =          3,  // fully automatic waypoint control using mission commands
+%     GUIDED =        4,  // fully automatic fly to coordinate or fly at velocity/direction using GCS immediate commands
+%     LOITER =        5,  // automatic horizontal acceleration with automatic throttle
+%     RTL =           6,  // automatic return to launching point
+%     CIRCLE =        7,  // automatic circular flight with automatic throttle
+%     LAND =          9,  // automatic landing with horizontal position control
+%     DRIFT =        11,  // semi-automous position, yaw and throttle control
+%     SPORT =        13,  // manual earth-frame angular rate control with manual throttle
+%     FLIP =         14,  // automatically flip the vehicle on the roll axis
+%     AUTOTUNE =     15,  // automatically tune the vehicle's roll and pitch gains
+%     POSHOLD =      16,  // automatic position hold with manual override, with automatic throttle
+%     BRAKE =        17,  // full-brake using inertial/GPS system, no pilot input
+%     THROW =        18,  // throw to launch mode using inertial/GPS system, no pilot input
+%     AVOID_ADSB =   19,  // automatic avoidance of obstacles in the macro scale - e.g. full-sized aircraft
+%     GUIDED_NOGPS = 20,  // guided mode but only accepts attitude and altitude
+%
+%     Auto_TakeOff,
+%     Auto_WP,
+%     Auto_Land,
+%     Auto_RTL,
+%     Auto_CircleMoveToEdge,
+%     Auto_Circle,
+%     Auto_Spline,
+%     Auto_NavGuided,
+%     Auto_Loiter,
+%     Auto_NavPayloadPlace,
+%
+%     Guided_TakeOff,
+%     Guided_WP,
+%     Guided_Velocity,
+%     Guided_PosVel,
+%     Guided_Angle,
+y = str2double(x);
+if isnan(y)
+    nameset={'STABILIZE','ACRO','ALT_HOLD','AUTO','GUIDED','LOITER','RTL','CIRCLE','LAND','DRIFT','SPORT','FLIP','AUTOTUNE','POSHOLD','BRAKE','THROW','AVOID_ADSB','GUIDED_NOGPS',...
+        'Auto_TakeOff','Auto_WP','Auto_Land','Auto_RTL','Auto_CircleMoveToEdge','Auto_Circle','Auto_Spline','Auto_NavGuided','Auto_Loiter','Auto_NavPayloadPlace',...
+        'Guided_TakeOff','Guided_WP','Guided_Velocity','Guided_PosVel','Guided_Angle'};
+    valset=[0,1,2,3,4,5,6,7,9,11,13,14,15,16,17,18,19,20,...
+        0,1,2,3,4,5,6,7,8,9,...
+        0,1,2,3,4];
+    try
+        % got char kind info
+        for i=1:length(valset)
+            flag=strcmpi(x,nameset{i});
+            if (flag)
+                y=valset(i);
+                break;
+            end
+        end
+    catch
+        warndlg(lasterr,'Wrong flight mode string');
+        rethrow(lasterror);
+    end
+end
+end
+
 
 function [timeset,dataset,tnulab,log_feq]=readmatlogfile(File,iFile,varlist)
 rootpath=pwd;
@@ -239,6 +301,9 @@ if (strcmpi(ext,'.log'))
     for i=1:len_fline
         tokens=textscan(flinedata{i},'%s','Delimiter',',');
         tokens=tokens{1};
+        %         if strcmpi(tokens{1},'mode')
+        %             fu=0;
+        %         end
         if strcmp(tokens{1},'FMT')%write label
             if(isfield(loadfile,tokens{4}))
                 %正常情况下的数据中不会出现重复的FMT格式定义
@@ -257,7 +322,7 @@ if (strcmpi(ext,'.log'))
             temp=zeros(1,len_valid_label);
             temp(1)=518;
             for j=2:len_valid_label
-                temp(j)=str2double(tokens{j});
+                temp(j)=apminfo_str2double(tokens{j});
             end
             [rlen,~]=size(data2set{idx});
             ptr(idx)=ptr(idx)+1;
@@ -381,6 +446,7 @@ stdtime_att=[];
 stdtime_mode=[];
 stdtime_ev=[];
 stdtime_err=[];
+stdtime_cmd=[];
 for i=1:len_labset
     labset{i}=scanset{i};
     %顺便记录下作为标准时间度量单位的序号指针
@@ -395,6 +461,9 @@ for i=1:len_labset
     end
     if strcmpi('err',labset{i}(1:length(labset{i})-6))
         stdtime_err = i;
+    end
+    if strcmpi('cmd',labset{i}(1:length(labset{i})-6))
+        stdtime_cmd = i;
     end
 end
 scanset=[];%release load
@@ -478,8 +547,8 @@ tnulab(1)=1;
 for i=2:len_labset
     tnulab(i)=tnulab(i-1)+len_sig(i-1)+1;%时间数据堆积到一起的
 end
-%单独处理MODE_label和EV_label标签下的数据文件，两者几乎属于触发式记录，会导致数据过于狭窄，画图处理时显示效果为折线形式，不满足使用要求
-%MODE_label指代飞机所处的飞行模态mode，EV_label记录了飞机飞行过程中的触发的事件event记录
+%单独处理MODE_label和EV_label和CMD_label标签下的数据文件，两者几乎属于触发式记录，会导致数据过于狭窄，画图处理时显示效果为折线形式，不满足使用要求
+%MODE_label指代飞机所处的飞行模态mode，EV_label记录了飞机飞行过程中的触发的事件event记录,cmd
 %这里折衷考虑将mode和ev的数据都直接用10hz的频率扩展成长数据集,最后一帧取最大时间帧
 spe_freq = 10;
 spe_dt = 1/spe_freq*(tmunit/1.0e-06);%统一指定的特殊单位到配置文件中去
@@ -500,9 +569,15 @@ if(~isempty(stdtime_err))
         stdtime_max = stdtime_err;
     end
 end
+if(~isempty(stdtime_cmd))
+    if timeset{stdtime_cmd}(end)>timeset{stdtime_max}(end)
+        stdtime_max = stdtime_cmd;
+    end
+end
 lasttime_stamp=timeset{stdtime_max}(end);
 for i=1:len_labset
-    if strcmpi('mode',labset{i}(1:length(labset{i})-6)) || strcmpi('ev',labset{i}(1:length(labset{i})-6)) || strcmpi('err',labset{i}(1:length(labset{i})-6))
+    if (strcmpi('mode',labset{i}(1:length(labset{i})-6)) || strcmpi('ev',labset{i}(1:length(labset{i})-6)) ||...
+        strcmpi('err',labset{i}(1:length(labset{i})-6)) || strcmpi('cmd',labset{i}(1:length(labset{i})-6)))
         time_spe = timeset{i};%原始时间节点
         data_spe = cell(len_sig(i),1);
         %确定数值指针
