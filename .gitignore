@@ -20,3 +20,5 @@ codegen/
 *.slxc
 # Octave session info
 octave-workspace
+*.dat
+*.log

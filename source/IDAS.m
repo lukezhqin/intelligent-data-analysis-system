@@ -190,7 +190,7 @@ handles.newDocument=uicontrol(handles.IDAS,'Style','checkbox',...
 
 
 % --------------------Check configuration files--------------------
-cfgname='Configuration_AnakinQin.cfg';
+cfgname='Configuration_LukeQin.cfg';
 cfgfpath=strcat(pwd,'\',cfgname);
 fid=fopen(cfgfpath);
 if fid >= 0
@@ -347,7 +347,7 @@ dim=length(File);
 % add for setting defaut directory
 Userdata=get(hobject,'Userdata');
 %support for the APM open source flight control system data analysis
-cfgname='Configuration_AnakinQin.cfg';
+cfgname='Configuration_LukeQin.cfg';
 cfgfpath=strcat(pwd,'\',cfgname);
 fid=fopen(cfgfpath);
 if fid >= 0

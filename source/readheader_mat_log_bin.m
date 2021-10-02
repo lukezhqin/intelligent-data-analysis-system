@@ -31,7 +31,7 @@ end
 if (strcmpi(ext,'.log'))
     %暂时还未整理好bin文件读取:a=fread(fid)直接读取二进制文件，但是需要知道数据协议，等待2.0版本进行发布bin文件直接读取功能--->89一行数据
     %读取配置文件，该文件写明了需要转换的变量，忽略不存在的变量
-    cfgname='Configuration_AnakinQin.cfg';
+    cfgname='Configuration_LukeQin.cfg';
     cfgfpath=strcat(rootpath,'\',cfgname);
     fid=fopen(cfgfpath);
     if fid==-1
@@ -187,7 +187,7 @@ end
 whosdata=[];%释放内存
 loadfile=load(File,getallname{:});
 %读取配置文件，该文件写明了需要转换的变量，忽略不存在的变量
-cfgname='Configuration_AnakinQin.cfg';
+cfgname='Configuration_LukeQin.cfg';
 cfgfpath=strcat(rootpath,'\',cfgname);
 fid=fopen(cfgfpath);
 if fid==-1

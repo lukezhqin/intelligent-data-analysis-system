@@ -127,7 +127,7 @@ if (strcmpi(ext,'.log'))
     %% 读取log格式文件
     %读取配置文件，该文件写明了需要转换的变量，忽略不存在的变量
     %读取是否需要采用并行计算的自定义选项
-    cfgname='Configuration_AnakinQin.cfg';
+    cfgname='Configuration_LukeQin.cfg';
     cfgfpath=strcat(rootpath,'\',cfgname);
     fid=fopen(cfgfpath);
     if fid==-1
@@ -315,7 +315,7 @@ else
 end
 %% 开始数据读取
 %读取配置文件，该文件写明了需要转换的变量，忽略不存在的变量
-cfgname='Configuration_AnakinQin.cfg';
+cfgname='Configuration_LukeQin.cfg';
 cfgfpath=strcat(rootpath,'\',cfgname);
 fid=fopen(cfgfpath);
 if fid==-1

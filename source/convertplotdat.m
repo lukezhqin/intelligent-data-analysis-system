@@ -28,7 +28,7 @@ for i=1:length(whosdata)
 end
 loadfile=load (filedir,getallname{:});
 %读取配置文件，该文件写明了需要转换的变量，忽略不存在的变量
-cfgname='Configuration_AnakinQin.cfg';
+cfgname='Configuration_LukeQin.cfg';
 cfgfpath=strcat(appdir,'\',cfgname);
 fid=fopen(cfgfpath);
 if fid==-1

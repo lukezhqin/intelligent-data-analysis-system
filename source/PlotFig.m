@@ -64,7 +64,7 @@ if userdata~=0
 else
     if isfield(idasdata{1},'label')
         %读取配置文件，该文件写明了需要转换的变量，忽略不存在的变量
-        cfgname='Configuration_AnakinQin.cfg';
+        cfgname='Configuration_LukeQin.cfg';
         cfgfpath=strcat(pwd,'\',cfgname);
         fid=fopen(cfgfpath);
         if fid==-1
